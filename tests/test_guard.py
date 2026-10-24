@@ -175,3 +175,40 @@ def test_proxy_budget_is_local_and_fail_closed(tmp_path, monkeypatch):
     budget = Budget()
     assert budget.charge(10)
     assert not budget.charge(1)
+
+def test_doctor_strict_rejects_invalid_settings(tmp_path):
+    target = tmp_path / "bad.json"; target.write_text("not-json")
+    result = report(target)
+    assert not result["settings_valid"] and not result["strict_ok"]
+
+def test_indexer_recovers_after_transcript_truncation(tmp_path):
+    transcript = tmp_path / "s.jsonl"; transcript.write_text(json.dumps({"id":"a"}) + "\n")
+    index = SessionIndexer(tmp_path / "i.sqlite"); index.index(transcript)
+    transcript.write_text(json.dumps({"id":"b"}) + "\n")
+    assert index.index(transcript)["new_events"] == 1
+    index.close()
+
+def test_indexer_does_not_store_message_body(tmp_path):
+    transcript = tmp_path / "s.jsonl"; transcript.write_text(json.dumps({"id":"a","message":"SECRET"}) + "\n")
+    database = tmp_path / "i.sqlite"; index = SessionIndexer(database); index.index(transcript); index.close()
+    assert b"SECRET" not in database.read_bytes()
+
+def test_uninstall_removes_only_hache_hooks(tmp_path):
+    target = tmp_path / "settings.json"
+    target.write_text(json.dumps({"hooks":{"PreToolUse":[{"hooks":[{"command":"hache_guard pre"}]},{"hooks":[{"command":"custom"}]}]}}))
+    uninstall(target)
+    data = json.loads(target.read_text())
+    assert "hache_guard" not in json.dumps(data) and "custom" in json.dumps(data)
+
+def test_compact_list_content_is_preserved(tmp_path):
+    target = tmp_path / "s.jsonl"
+    target.write_text(json.dumps({"type":"user","message":{"role":"user","content":[{"type":"text","text":"important task"}]}}) + "\n")
+    compact(target, replace=True)
+    assert "important task" in json.loads(target.read_text())["message"]["content"]
+
+def test_policy_env_override_for_concurrency(monkeypatch):
+    monkeypatch.setenv("HACHE_MAX_TOOLS", "7")
+    assert Policy.from_env().max_tools == 7
+
+def test_breaker_error_threshold_is_hard():
+    assert evaluate({"errors":{"502":50}})["state"] == "break"

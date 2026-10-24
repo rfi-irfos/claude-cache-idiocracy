@@ -15,14 +15,20 @@ class SessionIndexer:
         self.db = sqlite3.connect(self.database)
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("CREATE TABLE IF NOT EXISTS cursors (path TEXT PRIMARY KEY, offset INTEGER NOT NULL)")
+        columns = {row[1] for row in self.db.execute("PRAGMA table_info(cursors)")}
+        if "fingerprint" not in columns:
+            self.db.execute("ALTER TABLE cursors ADD COLUMN fingerprint TEXT NOT NULL DEFAULT ''")
         self.db.execute("CREATE TABLE IF NOT EXISTS events (path TEXT, request_id TEXT, kind TEXT, bytes INTEGER, PRIMARY KEY(path, request_id, kind))")
         self.db.commit()
 
     def index(self, transcript: str | Path) -> dict:
         path = Path(transcript).expanduser().resolve()
-        row = self.db.execute("SELECT offset FROM cursors WHERE path=?", (str(path),)).fetchone()
+        row = self.db.execute("SELECT offset,fingerprint FROM cursors WHERE path=?", (str(path),)).fetchone()
         offset = int(row[0]) if row else 0
-        if path.stat().st_size < offset:
+        with path.open("rb") as probe:
+            fingerprint = hashlib.sha256(probe.readline()).hexdigest()
+        previous_fingerprint = row[1] if row and len(row) > 1 else ""
+        if path.stat().st_size < offset or (offset and previous_fingerprint and previous_fingerprint != fingerprint):
             offset = 0
             self.db.execute("DELETE FROM events WHERE path=?", (str(path),))
         added = 0
@@ -38,7 +44,7 @@ class SessionIndexer:
                 cur = self.db.execute("INSERT OR IGNORE INTO events VALUES (?,?,?,?)", (str(path), request_id, kind, len(raw)))
                 added += cur.rowcount
             end = stream.tell()
-        self.db.execute("INSERT OR REPLACE INTO cursors VALUES (?,?)", (str(path), end))
+        self.db.execute("INSERT OR REPLACE INTO cursors(path,offset,fingerprint) VALUES (?,?,?)", (str(path), end, fingerprint))
         self.db.commit()
         return {"path": str(path), "offset": end, "new_events": added}
 
