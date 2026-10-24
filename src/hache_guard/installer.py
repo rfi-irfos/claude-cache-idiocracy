@@ -7,11 +7,15 @@ import subprocess
 import sys
 from pathlib import Path
 from .policy import Policy
+from .lifecycle import backup_path
 
 def install_settings(settings: str | Path | None = None) -> Path:
     target = Path(settings or "~/.claude/settings.json").expanduser()
     try: data = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {}
     except json.JSONDecodeError as exc: raise SystemExit(f"Invalid Claude settings: {target}: {exc}")
+    if target.exists():
+        backup = backup_path(target)
+        backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
     data.setdefault("env", {}).update(Policy().environment())
     data["env"]["CLAUDE_CODE_MAX_RETRIES"] = "3"
     # Keep an explicit user choice, but make the known-stable default portable.

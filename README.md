@@ -60,3 +60,6 @@ The archive is never deleted; only the resume-visible path is replaced.
 
 See `docs/upstream.md` for the open-source inspirations and attribution.
 See `docs/STATUS.md` for verified capabilities and explicit limitations.
+
+To remove only Hache-managed settings and hooks while preserving all other
+Claude configuration, run `hache-guard uninstall`.

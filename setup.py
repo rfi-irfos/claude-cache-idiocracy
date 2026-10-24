@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="claude-cache-idiocracy",
-    version="0.1.0",
+    version="0.2.0",
     description="Local Claude Code context, read, retry and subagent guard",
     package_dir={"": "src"},
     packages=find_packages("src"),

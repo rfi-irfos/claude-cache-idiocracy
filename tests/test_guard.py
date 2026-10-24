@@ -11,6 +11,7 @@ from hache_guard.handover import write
 from hache_guard.installer import install_settings
 from hache_guard.indexer import SessionIndexer
 from hache_guard.doctor import report
+from hache_guard.lifecycle import uninstall
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -157,3 +158,12 @@ def test_doctor_reports_policy_and_valid_settings(tmp_path):
     settings.write_text(json.dumps({"hooks":{"PreToolUse":[{"hooks":[{"command":"hache_guard"}]}]}}))
     result = report(settings)
     assert result["settings_valid"] and result["hooks_installed"] and result["policy"]["CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY"] == "10"
+
+def test_installer_creates_backup_and_uninstall_preserves_other_settings(tmp_path):
+    target = tmp_path / "settings.json"
+    target.write_text(json.dumps({"custom": True}))
+    install_settings(target)
+    assert list(tmp_path.glob("settings.json.hache-backup-*"))
+    uninstall(target)
+    data = json.loads(target.read_text())
+    assert data["custom"] is True and not any("hache_guard" in json.dumps(x) for x in data.get("hooks", {}).values())
