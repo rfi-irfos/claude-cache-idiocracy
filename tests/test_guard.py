@@ -12,6 +12,7 @@ from hache_guard.installer import install_settings
 from hache_guard.indexer import SessionIndexer
 from hache_guard.doctor import report
 from hache_guard.lifecycle import uninstall
+from hache_guard.proxy import Budget
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -167,3 +168,10 @@ def test_installer_creates_backup_and_uninstall_preserves_other_settings(tmp_pat
     uninstall(target)
     data = json.loads(target.read_text())
     assert data["custom"] is True and not any("hache_guard" in json.dumps(x) for x in data.get("hooks", {}).values())
+
+def test_proxy_budget_is_local_and_fail_closed(tmp_path, monkeypatch):
+    monkeypatch.setenv("HACHE_PROXY_STATE", str(tmp_path / "proxy.sqlite"))
+    monkeypatch.setenv("HACHE_PROXY_INPUT_BUDGET", "10")
+    budget = Budget()
+    assert budget.charge(10)
+    assert not budget.charge(1)
