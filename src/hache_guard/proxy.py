@@ -4,6 +4,9 @@ import argparse
 import http.client
 import os
 import sqlite3
+import time
+import uuid
+import json
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
@@ -15,6 +18,7 @@ class Budget:
         Path(path).expanduser().parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(path)
         self.db.execute("CREATE TABLE IF NOT EXISTS budget (id INTEGER PRIMARY KEY CHECK(id=1), input_tokens INTEGER NOT NULL DEFAULT 0)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, estimated_tokens INTEGER, actual_input_tokens INTEGER, status INTEGER, latency_ms REAL)")
         self.db.execute("INSERT OR IGNORE INTO budget(id,input_tokens) VALUES(1,0)")
         self.db.commit()
 
@@ -31,6 +35,10 @@ class Budget:
 
     def close(self):
         self.db.close()
+
+    def record(self, request_id: str, estimated: int, actual: int | None, status: int, latency_ms: float):
+        self.db.execute("INSERT OR REPLACE INTO requests VALUES (?,?,?,?,?)", (request_id, estimated, actual, status, latency_ms))
+        self.db.commit()
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
@@ -51,7 +59,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
         body = self.rfile.read(length)
         # Conservative preflight estimate; response usage, when present, is charged below.
         budget = Budget()
-        if not budget.charge(max(1, len(body) // 4)):
+        estimated = max(1, len(body) // 4)
+        request_id = uuid.uuid4().hex
+        started = time.perf_counter()
+        if not budget.charge(estimated):
+            budget.record(request_id, estimated, None, 429, (time.perf_counter() - started) * 1000)
             budget.close()
             self.send_error(429, "hache local input budget exceeded")
             return
@@ -62,19 +74,34 @@ class ProxyHandler(BaseHTTPRequestHandler):
             upstream_path += "?" + parsed.query
         connection.request("POST", upstream_path, body=body, headers=headers)
         response = connection.getresponse()
-        budget.close()
         self.send_response(response.status)
         for key, value in response.getheaders():
             if key.lower() not in {"transfer-encoding", "connection"}:
                 self.send_header(key, value)
         self.end_headers()
         # Stream SSE and ordinary responses without buffering or altering provider output.
+        actual = None
+        line_buffer = b""
         while True:
             chunk = response.read(64 * 1024)
             if not chunk:
                 break
+            line_buffer += chunk
+            while b"\n" in line_buffer:
+                line, line_buffer = line_buffer.split(b"\n", 1)
+                if b"data:" in line and b"usage" in line:
+                    try:
+                        event = json.loads(line.split(b"data:", 1)[1].strip())
+                        usage = event.get("usage") or {}
+                        candidate = int(usage.get("input_tokens", 0) or 0) + int(usage.get("cache_read_input_tokens", 0) or 0)
+                        if candidate:
+                            actual = candidate
+                    except (ValueError, TypeError, json.JSONDecodeError):
+                        pass
             self.wfile.write(chunk)
             self.wfile.flush()
+        budget.record(request_id, estimated, actual, response.status, (time.perf_counter() - started) * 1000)
+        budget.close()
 
     def log_message(self, *_args):
         return

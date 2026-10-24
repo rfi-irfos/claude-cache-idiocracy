@@ -177,6 +177,12 @@ def test_proxy_budget_is_local_and_fail_closed(tmp_path, monkeypatch):
     assert budget.charge(10)
     assert not budget.charge(1)
 
+def test_proxy_records_usage_metadata_without_prompt(tmp_path, monkeypatch):
+    monkeypatch.setenv("HACHE_PROXY_STATE", str(tmp_path / "proxy.sqlite"))
+    budget = Budget(); assert budget.charge(20); budget.record("req", 20, 12, 200, 4.5); budget.close()
+    raw = (tmp_path / "proxy.sqlite").read_bytes()
+    assert b"req" in raw and b"prompt" not in raw
+
 def test_doctor_strict_rejects_invalid_settings(tmp_path):
     target = tmp_path / "bad.json"; target.write_text("not-json")
     result = report(target)
