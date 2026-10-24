@@ -1,3 +1,4 @@
+param([switch]$All)
 $ErrorActionPreference = "Stop"
 $repo = if ($env:HACHE_REPO) { $env:HACHE_REPO } else { "https://github.com/rfi-irfos/claude-cache-idiocracy.git" }
 $dir = if ($env:HACHE_DIR) { $env:HACHE_DIR } else { Join-Path $HOME ".claude\claude-cache-idiocracy" }
@@ -12,4 +13,6 @@ $python = (Get-Command python -ErrorAction Stop).Source
 if ($LASTEXITCODE -ne 0) { throw "Python package installation failed" }
 & $python -m hache_guard install
 if ($LASTEXITCODE -ne 0) { throw "Claude settings installation failed" }
+& $python -m hache_guard doctor --strict
+if ($LASTEXITCODE -ne 0) { throw "Hache doctor failed" }
 Write-Output "claude-cache-idiocracy installed; restart Claude Code."

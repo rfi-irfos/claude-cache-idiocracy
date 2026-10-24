@@ -9,6 +9,8 @@ from .installer import install_settings
 from .metrics import transcript_usage
 from .supervisor import run as supervise
 from .offline_compact import compact
+from .doctor import run as doctor_main
+from .indexer import SessionIndexer
 
 
 def hook(event: str) -> int:
@@ -29,9 +31,10 @@ def hook(event: str) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["pre", "post", "policy", "install", "analyze", "run", "compact"])
+    parser.add_argument("command", choices=["pre", "post", "policy", "install", "analyze", "run", "compact", "doctor", "index"])
     parser.add_argument("path", nargs="?")
     parser.add_argument("--replace", action="store_true")
+    parser.add_argument("--strict", action="store_true")
     # Allow the ergonomic `compact --replace transcript.jsonl` ordering.
     args = parser.parse_intermixed_args()
     if args.command in ("pre", "post"):
@@ -49,6 +52,12 @@ def main() -> int:
     if args.command == "compact":
         if not args.path: parser.error("compact requires a transcript path")
         print(compact(args.path, replace=args.replace))
+        return 0
+    if args.command == "doctor":
+        return doctor_main(strict=args.strict)
+    if args.command == "index":
+        if not args.path: parser.error("index requires a transcript path")
+        print(json.dumps(SessionIndexer().index(args.path), indent=2))
         return 0
     print(json.dumps(Policy.from_env().__dict__, indent=2))
     return 0

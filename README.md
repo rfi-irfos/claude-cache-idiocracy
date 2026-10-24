@@ -1,7 +1,8 @@
-# claude-cache-idiocracy
+# Claude Cache Idiocracy
 
-Private RFI-IRFOS guard for Claude Code. It combines persistent read deduplication,
-context budgets, retry circuit breaking, handovers, and bounded subagent fan-out.
+Private RFI-IRFOS enforcement layer for Claude Code. It combines persistent,
+session-scoped read deduplication, incremental transcript indexing, offline
+compaction, retry/cost circuit breaking, RTK integration and bounded subagent fan-out.
 
 The guard stores hashes and counters locally. It never stores credentials or
 complete transcripts. Offline compaction deliberately retains only bounded,
@@ -20,6 +21,10 @@ local summary excerpts so a replaced session can resume with context.
 ## Install
 
 Requires an authenticated `gh` CLI because the repository is private.
+
+The installer is the only setup step: it updates the checkout, installs the
+package, migrates settings, wires hooks, detects RTK, runs the strict doctor,
+and fails if any required check is unsuccessful.
 
 ```sh
 gh repo clone rfi-irfos/claude-cache-idiocracy "$HOME/.claude/claude-cache-idiocracy" && sh "$HOME/.claude/claude-cache-idiocracy/install.sh"
@@ -54,3 +59,4 @@ single synthetic compact-summary entry at the original session path for `--resum
 The archive is never deleted; only the resume-visible path is replaced.
 
 See `docs/upstream.md` for the open-source inspirations and attribution.
+See `docs/STATUS.md` for verified capabilities and explicit limitations.

@@ -9,6 +9,8 @@ from hache_guard.supervisor import find_transcript
 from hache_guard.offline_compact import compact
 from hache_guard.handover import write
 from hache_guard.installer import install_settings
+from hache_guard.indexer import SessionIndexer
+from hache_guard.doctor import report
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -140,3 +142,18 @@ def test_installer_wires_existing_rtk_without_requiring_it(tmp_path, monkeypatch
     target = tmp_path / "settings.json"; install_settings(target)
     data = json.loads(target.read_text())
     assert any(h["command"] == "rtk hook claude" for item in data["hooks"]["PreToolUse"] for h in item["hooks"])
+
+def test_indexer_is_incremental_and_deduplicates(tmp_path):
+    transcript = tmp_path / "s.jsonl"; transcript.write_text(json.dumps({"id":"a","type":"assistant"}) + "\n")
+    index = SessionIndexer(tmp_path / "index.sqlite")
+    assert index.index(transcript)["new_events"] == 1
+    assert index.index(transcript)["new_events"] == 0
+    transcript.write_text(transcript.read_text() + json.dumps({"id":"b","type":"assistant"}) + "\n")
+    assert index.index(transcript)["new_events"] == 1
+    index.close()
+
+def test_doctor_reports_policy_and_valid_settings(tmp_path):
+    settings = tmp_path / "settings.json"
+    settings.write_text(json.dumps({"hooks":{"PreToolUse":[{"hooks":[{"command":"hache_guard"}]}]}}))
+    result = report(settings)
+    assert result["settings_valid"] and result["hooks_installed"] and result["policy"]["CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY"] == "10"
