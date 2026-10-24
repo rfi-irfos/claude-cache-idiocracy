@@ -16,6 +16,7 @@ jobs:
       - run: python -m pytest -q
       - run: python scripts/hache-token-benchmark.py
       - run: python scripts/hache-benchmark.py
+      - run: python scripts/hache-lifecycle-smoke.py
       - name: exercise installer (Unix)
         if: runner.os != 'Windows'
         env:

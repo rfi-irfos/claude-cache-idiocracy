@@ -13,12 +13,12 @@
 
 ## Current limitations
 
-- The proxy is a transport pass-through until provider-specific streaming usage
-  accounting is enabled; OAuth/Subscription CLI enforcement remains hook/supervisor based.
+- The proxy records provider streaming usage metadata without retaining response
+  bodies; OAuth/Subscription CLI enforcement remains hook/supervisor based.
 - RTK is not copied into the repository. Its hook is wired when installed and
   the internal fallback remains the portable default.
-- Live API token-savings and quality benchmarks require a controlled fixture or
-  provider test account; CI never sends real prompts.
+- CI uses deterministic local fixtures; live API token-savings and quality
+  benchmarks still require a provider test account and are never sent from CI.
 
 ## Verification rule
 
