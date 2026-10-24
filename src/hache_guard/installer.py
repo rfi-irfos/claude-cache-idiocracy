@@ -18,6 +18,8 @@ def install_settings(settings: str | Path | None = None) -> Path:
         backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
     data.setdefault("env", {}).update(Policy().environment())
     data["env"]["CLAUDE_CODE_MAX_RETRIES"] = "3"
+    # Do not force an arbitrary compact threshold; Claude should use the model-native context window.
+    data["env"].pop("CLAUDE_CODE_AUTO_COMPACT_WINDOW", None)
     # Keep an explicit user choice, but make the known-stable default portable.
     data.setdefault("model", "claude-sonnet-5")
     executable = subprocess.list2cmdline([sys.executable]) if os.name == "nt" else shlex.quote(sys.executable)

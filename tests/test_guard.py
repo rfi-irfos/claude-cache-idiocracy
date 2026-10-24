@@ -135,9 +135,11 @@ def test_find_transcript_scopes_to_working_project(tmp_path):
 
 def test_installer_is_idempotent_and_sets_model(tmp_path):
     target = tmp_path / "settings.json"
+    target.write_text(json.dumps({"env": {"CLAUDE_CODE_AUTO_COMPACT_WINDOW": "150000"}}))
     install_settings(target); install_settings(target)
     data = json.loads(target.read_text())
     assert data["model"] == "claude-sonnet-5"
+    assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" not in data["env"]
     assert sum(item["matcher"] == "Read" for item in data["hooks"]["PreToolUse"]) == 1
     assert sum(item["matcher"] == "Read" for item in data["hooks"]["PostToolUse"]) == 1
 
