@@ -2,7 +2,7 @@
 name = "claude-hache-idiocracy"
 version = "0.1.0"
 description = "Local Claude Code context, read, retry and subagent guard"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 
 [project.scripts]
 hache-guard = "hache_guard.cli:main"

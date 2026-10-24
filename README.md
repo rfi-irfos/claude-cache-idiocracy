@@ -17,6 +17,8 @@ contents, credentials, or complete transcripts.
 
 ## Install
 
+Requires an authenticated `gh` CLI because the repository is private.
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/rfi-irfos/claude-hache-idiocracy/main/install.sh | sh
 ```
