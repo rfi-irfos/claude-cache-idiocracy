@@ -31,4 +31,13 @@ irm https://raw.githubusercontent.com/rfi-irfos/claude-hache-idiocracy/main/inst
 
 For a local checkout: `python3 -m pip install --user . && python3 -m hache_guard install`.
 
+For full retry/compaction supervision, launch Claude through:
+
+```sh
+hache-claude -- claude
+```
+
+The supervisor is local-only. It watches the Claude transcript, emits one soft
+warning, then writes a handover and terminates the process at the hard threshold.
+
 See `docs/upstream.md` for the open-source inspirations and attribution.

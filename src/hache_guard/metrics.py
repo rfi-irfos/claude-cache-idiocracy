@@ -12,13 +12,15 @@ def transcript_usage(path: str | Path) -> dict:
             try: row = json.loads(line)
             except json.JSONDecodeError: continue
             if row.get("type") == "system" and "compact" in line.lower(): compactions += 1
-            if row.get("type") != "api-request": continue
-            rid = row.get("id") or row.get("requestId") or row.get("uuid")
+            usage = (row.get("message") or {}).get("usage") or row.get("usage") or {}
+            if not usage and row.get("type") != "api-request":
+                continue
+            rid = row.get("requestId") or row.get("id") or row.get("uuid") or (row.get("message") or {}).get("id")
             if rid and rid in requests: continue
             if rid: requests.add(rid)
-            usage = (row.get("message") or {}).get("usage") or row.get("usage") or {}
             for field in FIELDS: totals[field] += int(usage.get(field, 0) or 0)
-            low = line.lower()
-            for marker in ("429", "500", "502", "503", "529", "timeout", "overloaded"):
-                if marker in low: errors[marker] += 1
+            if row.get("type") == "api-request":
+                low = line.lower()
+                for marker in ("429", "500", "502", "503", "529", "timeout", "overloaded"):
+                    if marker in low: errors[marker] += 1
     return {"requests": len(requests), "compactions": compactions, "errors": dict(errors), **totals}

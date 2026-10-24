@@ -7,6 +7,8 @@ from .read_guard import check, record
 from .breaker import evaluate
 from .installer import install_settings
 from .metrics import transcript_usage
+from .supervisor import run as supervise
+from .offline_compact import compact
 
 
 def hook(event: str) -> int:
@@ -27,7 +29,7 @@ def hook(event: str) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["pre", "post", "policy", "install", "analyze"])
+    parser.add_argument("command", choices=["pre", "post", "policy", "install", "analyze", "run", "compact"])
     parser.add_argument("path", nargs="?")
     args = parser.parse_args()
     if args.command in ("pre", "post"):
@@ -39,6 +41,12 @@ def main() -> int:
         if not args.path: parser.error("analyze requires a transcript path")
         metrics = transcript_usage(args.path)
         print(json.dumps({"metrics": metrics, "breaker": evaluate(metrics)}, indent=2))
+        return 0
+    if args.command == "run":
+        return supervise(args.path and [args.path] or ["claude"])
+    if args.command == "compact":
+        if not args.path: parser.error("compact requires a transcript path")
+        print(compact(args.path))
         return 0
     print(json.dumps(Policy.from_env().__dict__, indent=2))
     return 0

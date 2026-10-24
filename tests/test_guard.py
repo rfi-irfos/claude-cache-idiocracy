@@ -5,6 +5,7 @@ from hache_guard.policy import Policy
 from hache_guard.read_guard import check, record
 from hache_guard.breaker import evaluate
 from hache_guard.metrics import transcript_usage
+from hache_guard.supervisor import find_transcript
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -20,6 +21,9 @@ def test_unchanged_full_read_is_blocked(tmp_path, monkeypatch):
     state = tmp_path / "state.json"
     monkeypatch.setenv("HACHE_STATE", str(state))
     assert check(str(target)).allowed
+    record(str(target))
+    decision = check(str(target))
+    assert not decision.allowed
 
 def test_breaker_warns_and_breaks():
     assert evaluate({"cache_read_input_tokens": 100_000_000})["state"] == "warn"
@@ -30,9 +34,10 @@ def test_transcript_usage_deduplicates_request_ids(tmp_path):
     row = {"type": "api-request", "id": "r1", "message": {"usage": {"cache_read_input_tokens": 10}}}
     target.write_text(json.dumps(row) + "\n" + json.dumps(row) + "\n", encoding="utf-8")
     assert transcript_usage(target)["cache_read_input_tokens"] == 10
-    record(str(target))
-    decision = check(str(target))
-    assert not decision.allowed
+
+def test_breaker_compaction_threshold():
+    assert evaluate({"compactions": 2})["state"] == "warn"
+    assert evaluate({"compactions": 3})["state"] == "break"
 
 
 def test_changed_file_is_allowed(tmp_path, monkeypatch):
