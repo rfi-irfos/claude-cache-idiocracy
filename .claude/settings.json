@@ -1,0 +1,22 @@
+{
+  "env": {
+    "CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY": "10",
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "3",
+    "CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS": "3",
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [{"type": "command", "command": "python3 -m hache_guard pre"}]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [{"type": "command", "command": "python3 -m hache_guard post"}]
+      }
+    ]
+  }
+}
