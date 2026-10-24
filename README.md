@@ -18,7 +18,15 @@ contents, credentials, or complete transcripts.
 ## Install
 
 ```sh
-python3 -m hache_guard install --global
+curl -fsSL https://raw.githubusercontent.com/rfi-irfos/claude-hache-idiocracy/main/install.sh | sh
 ```
+
+Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/rfi-irfos/claude-hache-idiocracy/main/install.ps1 | iex
+```
+
+For a local checkout: `python3 -m pip install --user . && python3 -m hache_guard install`.
 
 See `docs/upstream.md` for the open-source inspirations and attribution.

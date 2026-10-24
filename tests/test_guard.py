@@ -3,6 +3,8 @@ from pathlib import Path
 
 from hache_guard.policy import Policy
 from hache_guard.read_guard import check, record
+from hache_guard.breaker import evaluate
+from hache_guard.metrics import transcript_usage
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -18,6 +20,16 @@ def test_unchanged_full_read_is_blocked(tmp_path, monkeypatch):
     state = tmp_path / "state.json"
     monkeypatch.setenv("HACHE_STATE", str(state))
     assert check(str(target)).allowed
+
+def test_breaker_warns_and_breaks():
+    assert evaluate({"cache_read_input_tokens": 100_000_000})["state"] == "warn"
+    assert evaluate({"cache_read_input_tokens": 250_000_000})["state"] == "break"
+
+def test_transcript_usage_deduplicates_request_ids(tmp_path):
+    target = tmp_path / "session.jsonl"
+    row = {"type": "api-request", "id": "r1", "message": {"usage": {"cache_read_input_tokens": 10}}}
+    target.write_text(json.dumps(row) + "\n" + json.dumps(row) + "\n", encoding="utf-8")
+    assert transcript_usage(target)["cache_read_input_tokens"] == 10
     record(str(target))
     decision = check(str(target))
     assert not decision.allowed
