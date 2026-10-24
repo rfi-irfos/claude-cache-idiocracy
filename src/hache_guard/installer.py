@@ -1,5 +1,8 @@
 from __future__ import annotations
 import json
+import os
+import shlex
+import subprocess
 import sys
 from pathlib import Path
 from .policy import Policy
@@ -12,12 +15,18 @@ def install_settings(settings: str | Path | None = None) -> Path:
     data["env"]["CLAUDE_CODE_MAX_RETRIES"] = "3"
     # Keep an explicit user choice, but make the known-stable default portable.
     data.setdefault("model", "claude-sonnet-5")
-    command = f"{sys.executable} -m hache_guard"
+    executable = subprocess.list2cmdline([sys.executable]) if os.name == "nt" else shlex.quote(sys.executable)
+    command = f"{executable} -m hache_guard"
     hooks = data.setdefault("hooks", {})
     def add(event, suffix):
         bucket = hooks.setdefault(event, [])
         command_text = f"{command} {suffix}"
-        if any(command_text in json.dumps(item) for item in bucket):
+        if any(
+            hook.get("command") == command_text
+            for item in bucket
+            for hook in item.get("hooks", [])
+            if isinstance(hook, dict)
+        ):
             return
         bucket.append({"matcher": "Read", "hooks": [{"type": "command", "command": command_text}]})
     add("PreToolUse", "pre")

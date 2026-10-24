@@ -17,13 +17,17 @@ def find_transcript(cwd: str, since: float) -> Path | None:
     root = Path(os.environ.get("CLAUDE_PROJECTS", "~/.claude/projects")).expanduser()
     if not root.exists():
         return None
+    resolved_cwd = str(Path(cwd).expanduser().resolve())
+    project_name = resolved_cwd.replace("\\", "-").replace("/", "-").replace(":", "")
+    scoped = root / project_name
+    search_root = scoped if scoped.is_dir() else root
     candidates = []
-    for path in root.glob("**/*.jsonl"):
+    for path in search_root.glob("**/*.jsonl"):
         try:
             stat = path.stat()
         except OSError:
             continue
-        if stat.st_mtime >= since and stat.st_size and "/subagents/" not in str(path):
+        if stat.st_mtime >= since and stat.st_size and "subagents" not in path.parts:
             candidates.append((stat.st_mtime, path))
     return max(candidates, default=(0, None))[1]
 

@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -29,6 +30,33 @@ def save(data: dict, path: Path | None = None) -> None:
     finally:
         if os.path.exists(name):
             os.unlink(name)
+
+
+@contextmanager
+def lock():
+    path = default_state().with_suffix(".lock")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = path.open("a+")
+    try:
+        if os.name == "nt":
+            import msvcrt
+            handle.write(" ")
+            handle.flush()
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        yield
+    finally:
+        if os.name == "nt":
+            import msvcrt
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
 
 
 def file_hash(path: str) -> str:

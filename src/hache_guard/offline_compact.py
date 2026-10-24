@@ -25,8 +25,12 @@ def compact(transcript: str | Path, replace: bool = False) -> Path:
             if isinstance(content, list):
                 texts = [x.get("text", "") for x in content if isinstance(x, dict) and x.get("type") == "text"]
                 text = " ".join(texts).strip()
-                if text and message.get("role") in ("user", "assistant"):
-                    recent.append({"role": message["role"], "text": re.sub(r"\s+", " ", text)[-1000:]})
+            elif isinstance(content, str):
+                text = content.strip()
+            else:
+                text = ""
+            if text and message.get("role") in ("user", "assistant"):
+                recent.append({"role": message["role"], "text": re.sub(r"\s+", " ", text)[-1000:]})
             for key in ("file_path", "path", "notebook_path"):
                 value = (row.get("tool_input") or {}).get(key)
                 if isinstance(value, str) and value.startswith(("/", "~")):

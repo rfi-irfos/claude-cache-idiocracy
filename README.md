@@ -3,8 +3,9 @@
 Private RFI-IRFOS guard for Claude Code. It combines persistent read deduplication,
 context budgets, retry circuit breaking, handovers, and bounded subagent fan-out.
 
-The guard stores hashes and counters locally. It never stores raw prompts, file
-contents, credentials, or complete transcripts.
+The guard stores hashes and counters locally. It never stores credentials or
+complete transcripts. Offline compaction deliberately retains only bounded,
+local summary excerpts so a replaced session can resume with context.
 
 ## Defaults
 
