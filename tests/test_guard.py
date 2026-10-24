@@ -120,7 +120,7 @@ def test_find_transcript_returns_existing_file(tmp_path):
 def test_find_transcript_scopes_to_working_project(tmp_path):
     import os, time
     cwd = tmp_path / "project"; cwd.mkdir()
-    project_name = str(cwd).replace("/", "-")
+    project_name = str(cwd.resolve()).replace("\\", "-").replace("/", "-").replace(":", "")
     scoped = tmp_path / project_name; scoped.mkdir()
     wanted = scoped / "wanted.jsonl"; wanted.write_text("{}\n")
     other = tmp_path / "other.jsonl"; other.write_text("{}\n")
