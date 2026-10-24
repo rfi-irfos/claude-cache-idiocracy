@@ -22,11 +22,11 @@ jobs:
         env:
           HACHE_REPO: ${{ github.workspace }}
           HACHE_DIR: ${{ runner.temp }}/hache-install
-        run: sh install.sh
+        run: sh install.sh --all
       - name: exercise installer (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         env:
           HACHE_REPO: ${{ github.workspace }}
           HACHE_DIR: ${{ runner.temp }}\hache-install
-        run: ./install.ps1
+        run: ./install.ps1 -All

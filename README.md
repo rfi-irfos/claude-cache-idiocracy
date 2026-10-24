@@ -28,13 +28,13 @@ package, migrates settings, wires hooks, detects RTK, runs the strict doctor,
 and fails if any required check is unsuccessful.
 
 ```sh
-gh repo clone rfi-irfos/claude-cache-idiocracy "$HOME/.claude/claude-cache-idiocracy" && sh "$HOME/.claude/claude-cache-idiocracy/install.sh"
+H="$HOME/.claude/claude-cache-idiocracy"; if [ -d "$H/.git" ]; then git -C "$H" pull --ff-only; else gh repo clone rfi-irfos/claude-cache-idiocracy "$H"; fi && sh "$H/install.sh" --all
 ```
 
 Windows PowerShell:
 
 ```powershell
-gh repo clone rfi-irfos/claude-cache-idiocracy "$HOME/.claude/claude-cache-idiocracy"; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1"
+if (!(Test-Path "$HOME/.claude/claude-cache-idiocracy/.git")) { gh repo clone rfi-irfos/claude-cache-idiocracy "$HOME/.claude/claude-cache-idiocracy" } else { git -C "$HOME/.claude/claude-cache-idiocracy" pull --ff-only }; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1" -All
 ```
 
 For a local checkout: `python3 -m pip install --user . && python3 -m hache_guard install`.
