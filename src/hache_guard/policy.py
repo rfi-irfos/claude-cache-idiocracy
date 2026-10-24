@@ -20,6 +20,8 @@ class Policy:
             "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": str(self.max_subagents),
             "CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS": str(self.max_subagents),
             "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": str(self.max_spawn_depth),
+            "CLAUDE_CODE_PROMPT_CACHE_TTL": "1h",
+            "CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL": "1h",
         }
 
     @classmethod

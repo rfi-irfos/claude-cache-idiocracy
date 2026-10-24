@@ -12,6 +12,7 @@ local summary excerpts so a replaced session can resume with context.
 - 10 concurrent tool calls
 - 3 concurrent subagents
 - no nested subagents
+- 1-hour prompt-cache TTL for main and subagent conversations (supported Claude Code versions)
 - 100M cache-read soft warning
 - 250M cache-read hard breaker
 - 20 API-error soft warning / 50 hard breaker in a 15-minute window

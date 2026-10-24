@@ -16,6 +16,8 @@ def test_policy_is_ten_tools_three_agents():
     assert env["CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY"] == "10"
     assert env["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "3"
     assert env["CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS"] == "3"
+    assert env["CLAUDE_CODE_PROMPT_CACHE_TTL"] == "1h"
+    assert env["CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL"] == "1h"
 
 
 def test_unchanged_full_read_is_blocked(tmp_path, monkeypatch):
