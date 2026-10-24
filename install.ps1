@@ -9,10 +9,15 @@ elseif ($ghAuthenticated) { gh repo clone rfi-irfos/claude-cache-idiocracy $dir 
 else { git clone $repo $dir }
 if ($LASTEXITCODE -ne 0) { throw "Repository checkout failed" }
 $python = (Get-Command python -ErrorAction Stop).Source
-& $python -m pip install --user --upgrade $dir
-if ($LASTEXITCODE -ne 0) { throw "Python package installation failed" }
-& $python -m hache_guard install
-if ($LASTEXITCODE -ne 0) { throw "Claude settings installation failed" }
-& $python -m hache_guard doctor --strict
-if ($LASTEXITCODE -ne 0) { throw "Hache doctor failed" }
+try {
+  & $python -m pip install --user --upgrade $dir
+  if ($LASTEXITCODE -ne 0) { throw "Python package installation failed" }
+  & $python -m hache_guard install
+  if ($LASTEXITCODE -ne 0) { throw "Claude settings installation failed" }
+  & $python -m hache_guard doctor --strict
+  if ($LASTEXITCODE -ne 0) { throw "Hache doctor failed" }
+} catch {
+  & $python -m hache_guard rollback 2>$null
+  throw
+}
 Write-Output "claude-cache-idiocracy installed; restart Claude Code."

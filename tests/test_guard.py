@@ -11,7 +11,7 @@ from hache_guard.handover import write
 from hache_guard.installer import install_settings
 from hache_guard.indexer import SessionIndexer
 from hache_guard.doctor import report
-from hache_guard.lifecycle import uninstall
+from hache_guard.lifecycle import rollback, uninstall
 from hache_guard.proxy import Budget
 
 
@@ -199,6 +199,12 @@ def test_uninstall_removes_only_hache_hooks(tmp_path):
     uninstall(target)
     data = json.loads(target.read_text())
     assert "hache_guard" not in json.dumps(data) and "custom" in json.dumps(data)
+
+def test_rollback_restores_latest_backup(tmp_path):
+    target = tmp_path / "settings.json"; target.write_text(json.dumps({"before": True}))
+    install_settings(target); target.write_text(json.dumps({"after": True}))
+    assert rollback(target) is not None
+    assert json.loads(target.read_text())["before"] is True
 
 def test_compact_list_content_is_preserved(tmp_path):
     target = tmp_path / "s.jsonl"

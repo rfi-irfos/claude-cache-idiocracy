@@ -11,7 +11,7 @@ from .supervisor import run as supervise
 from .offline_compact import compact
 from .doctor import run as doctor_main
 from .indexer import SessionIndexer
-from .lifecycle import uninstall
+from .lifecycle import rollback, uninstall
 
 
 def hook(event: str) -> int:
@@ -32,7 +32,7 @@ def hook(event: str) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["pre", "post", "policy", "install", "uninstall", "analyze", "run", "compact", "doctor", "index"])
+    parser.add_argument("command", choices=["pre", "post", "policy", "install", "uninstall", "rollback", "analyze", "run", "compact", "doctor", "index"])
     parser.add_argument("path", nargs="?")
     parser.add_argument("--replace", action="store_true")
     parser.add_argument("--strict", action="store_true")
@@ -45,6 +45,12 @@ def main() -> int:
         return 0
     if args.command == "uninstall":
         print(uninstall())
+        return 0
+    if args.command == "rollback":
+        result = rollback()
+        if result is None:
+            parser.error("no Hache settings backup exists")
+        print(result)
         return 0
     if args.command == "analyze":
         if not args.path: parser.error("analyze requires a transcript path")

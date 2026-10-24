@@ -28,3 +28,12 @@ def uninstall(settings: str | Path | None = None) -> Path:
 def backup_path(target: Path) -> Path:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return target.with_name(target.name + ".hache-backup-" + stamp)
+
+
+def rollback(settings: str | Path | None = None) -> Path | None:
+    target = Path(settings or "~/.claude/settings.json").expanduser()
+    backups = sorted(target.parent.glob(target.name + ".hache-backup-*"))
+    if not backups:
+        return None
+    target.write_text(backups[-1].read_text(encoding="utf-8"), encoding="utf-8")
+    return backups[-1]
