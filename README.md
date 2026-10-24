@@ -1,4 +1,4 @@
-# claude-hache-idiocracy
+# claude-cache-idiocracy
 
 Private RFI-IRFOS guard for Claude Code. It combines persistent read deduplication,
 context budgets, retry circuit breaking, handovers, and bounded subagent fan-out.
@@ -20,13 +20,13 @@ contents, credentials, or complete transcripts.
 Requires an authenticated `gh` CLI because the repository is private.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/rfi-irfos/claude-hache-idiocracy/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/rfi-irfos/claude-cache-idiocracy/main/install.sh | sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/rfi-irfos/claude-hache-idiocracy/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/rfi-irfos/claude-cache-idiocracy/main/install.ps1 | iex
 ```
 
 For a local checkout: `python3 -m pip install --user . && python3 -m hache_guard install`.
