@@ -40,4 +40,12 @@ hache-claude -- claude
 The supervisor is local-only. It watches the Claude transcript, emits one soft
 warning, then writes a handover and terminates the process at the hard threshold.
 
+To compact a large existing transcript without sending it back to the API:
+
+```sh
+hache-compact compact ~/.claude/projects/<project>/<session>.jsonl
+```
+
+This writes a deterministic local handover and leaves the original transcript untouched.
+
 See `docs/upstream.md` for the open-source inspirations and attribution.
