@@ -241,3 +241,12 @@ def test_agent_guard_isolated_by_session(tmp_path, monkeypatch):
     monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
     for _ in range(3): assert admit("a")[0]
     assert admit("b")[0]
+
+def test_parallel_read_records_do_not_lose_state(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    target = tmp_path / "parallel.txt"; target.write_text("x")
+    monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(lambda i: record(str(target), session=f"s{i}"), range(8)))
+    state = json.loads((tmp_path / "state.json").read_text())
+    assert len(state["files"][str(target.resolve())]) == 8
