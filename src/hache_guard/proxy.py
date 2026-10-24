@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import http.client
-import json
 import os
 import sqlite3
 from pathlib import Path
@@ -38,7 +37,17 @@ class ProxyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         target = os.environ.get("HACHE_UPSTREAM", "https://api.anthropic.com")
         parsed = urlsplit(target)
-        length = int(self.headers.get("Content-Length", "0"))
+        if parsed.scheme != "https" or not parsed.hostname:
+            self.send_error(502, "invalid HTTPS Hache upstream")
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self.send_error(400, "invalid content length")
+            return
+        if length < 0 or length > int(os.environ.get("HACHE_PROXY_MAX_BODY_BYTES", "20000000")):
+            self.send_error(413, "request body exceeds local Hache limit")
+            return
         body = self.rfile.read(length)
         # Conservative preflight estimate; response usage, when present, is charged below.
         budget = Budget()
@@ -48,24 +57,24 @@ class ProxyHandler(BaseHTTPRequestHandler):
             return
         connection = http.client.HTTPSConnection(parsed.hostname, parsed.port or 443, timeout=120)
         headers = {k: v for k, v in self.headers.items() if k.lower() not in {"host", "content-length"}}
-        connection.request("POST", parsed.path.rstrip("/") + self.path, body=body, headers=headers)
+        upstream_path = parsed.path.rstrip("/") + self.path
+        if parsed.query:
+            upstream_path += "?" + parsed.query
+        connection.request("POST", upstream_path, body=body, headers=headers)
         response = connection.getresponse()
-        payload = response.read()
-        try:
-            usage = (json.loads(payload) or {}).get("usage") or {}
-            actual = int(usage.get("input_tokens", 0) or 0) + int(usage.get("cache_read_input_tokens", 0) or 0)
-            if actual:
-                # The estimate is already charged; actual usage is retained as observability only.
-                self.log_message("provider_input_tokens=%s", actual)
-        except (ValueError, TypeError):
-            pass
         budget.close()
         self.send_response(response.status)
         for key, value in response.getheaders():
             if key.lower() not in {"transfer-encoding", "connection"}:
                 self.send_header(key, value)
         self.end_headers()
-        self.wfile.write(payload)
+        # Stream SSE and ordinary responses without buffering or altering provider output.
+        while True:
+            chunk = response.read(64 * 1024)
+            if not chunk:
+                break
+            self.wfile.write(chunk)
+            self.wfile.flush()
 
     def log_message(self, *_args):
         return
