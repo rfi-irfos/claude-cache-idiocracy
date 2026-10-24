@@ -8,6 +8,7 @@
 - Rolling token/error/compaction metrics and a supervisor circuit breaker.
 - `hache doctor --strict`, cross-platform packaging, RTK detection and hook wiring.
 - Hook-enforced per-session subagent admission and release accounting.
+- Deterministic local read/token-savings benchmark (`scripts/hache-token-benchmark.py`).
 - macOS/Linux/Windows CI with package, installer and regression coverage.
 
 ## Current limitations
