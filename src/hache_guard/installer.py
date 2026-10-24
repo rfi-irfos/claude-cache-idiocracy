@@ -12,8 +12,14 @@ def install_settings(settings: str | Path | None = None) -> Path:
     data["env"]["CLAUDE_CODE_MAX_RETRIES"] = "3"
     command = f"{sys.executable} -m hache_guard"
     hooks = data.setdefault("hooks", {})
-    hooks.setdefault("PreToolUse", []).append({"matcher": "Read", "hooks": [{"type": "command", "command": f"{command} pre"}]})
-    hooks.setdefault("PostToolUse", []).append({"matcher": "Read", "hooks": [{"type": "command", "command": f"{command} post"}]})
+    def add(event, suffix):
+        bucket = hooks.setdefault(event, [])
+        command_text = f"{command} {suffix}"
+        if any(command_text in json.dumps(item) for item in bucket):
+            return
+        bucket.append({"matcher": "Read", "hooks": [{"type": "command", "command": command_text}]})
+    add("PreToolUse", "pre")
+    add("PostToolUse", "post")
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return target
