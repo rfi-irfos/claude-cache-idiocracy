@@ -8,6 +8,7 @@ from hache_guard.metrics import transcript_usage
 from hache_guard.supervisor import find_transcript
 from hache_guard.offline_compact import compact
 from hache_guard.handover import write
+from hache_guard.installer import install_settings
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -86,3 +87,11 @@ def test_find_transcript_returns_existing_file(tmp_path):
     import os, time
     os.environ["CLAUDE_PROJECTS"] = str(tmp_path)
     assert find_transcript(str(tmp_path), time.time() - 10) == p
+
+def test_installer_is_idempotent_and_sets_model(tmp_path):
+    target = tmp_path / "settings.json"
+    install_settings(target); install_settings(target)
+    data = json.loads(target.read_text())
+    assert data["model"] == "claude-sonnet-5"
+    assert len(data["hooks"]["PreToolUse"]) == 1
+    assert len(data["hooks"]["PostToolUse"]) == 1

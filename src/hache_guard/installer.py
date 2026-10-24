@@ -10,6 +10,8 @@ def install_settings(settings: str | Path | None = None) -> Path:
     except json.JSONDecodeError as exc: raise SystemExit(f"Invalid Claude settings: {target}: {exc}")
     data.setdefault("env", {}).update(Policy().environment())
     data["env"]["CLAUDE_CODE_MAX_RETRIES"] = "3"
+    # Keep an explicit user choice, but make the known-stable default portable.
+    data.setdefault("model", "claude-sonnet-5")
     command = f"{sys.executable} -m hache_guard"
     hooks = data.setdefault("hooks", {})
     def add(event, suffix):

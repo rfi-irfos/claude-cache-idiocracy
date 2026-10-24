@@ -20,13 +20,13 @@ contents, credentials, or complete transcripts.
 Requires an authenticated `gh` CLI because the repository is private.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/rfi-irfos/claude-cache-idiocracy/main/install.sh | sh
+gh repo clone rfi-irfos/claude-cache-idiocracy "$HOME/.claude/claude-cache-idiocracy" && sh "$HOME/.claude/claude-cache-idiocracy/install.sh"
 ```
 
 Windows PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/rfi-irfos/claude-cache-idiocracy/main/install.ps1 | iex
+gh repo clone rfi-irfos/claude-cache-idiocracy "$HOME/.claude/claude-cache-idiocracy"; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1"
 ```
 
 For a local checkout: `python3 -m pip install --user . && python3 -m hache_guard install`.
@@ -46,8 +46,9 @@ To compact a large existing transcript without sending it back to the API:
 hache-compact compact ~/.claude/projects/<project>/<session>.jsonl
 ```
 
-This writes a deterministic local handover and leaves the original transcript untouched.
+This writes a deterministic local handover without sending transcript data to an API.
 Add `--replace` to archive the original as `.full-<timestamp>.jsonl` and leave a
 single synthetic compact-summary entry at the original session path for `--resume`.
+The archive is never deleted; only the resume-visible path is replaced.
 
 See `docs/upstream.md` for the open-source inspirations and attribution.
