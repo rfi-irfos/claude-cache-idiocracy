@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 if [ "${1:-}" = "--all" ]; then shift; fi
-trap 'python3 -m hache_guard rollback >/dev/null 2>&1 || true' ERR
+trap 'status=$?; if [ "$status" -ne 0 ]; then python3 -m hache_guard rollback >/dev/null 2>&1 || true; fi; exit "$status"' 0
 repo="${HACHE_REPO:-https://github.com/rfi-irfos/claude-cache-idiocracy.git}"
 dir="${HACHE_DIR:-$HOME/.claude/claude-cache-idiocracy}"
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
