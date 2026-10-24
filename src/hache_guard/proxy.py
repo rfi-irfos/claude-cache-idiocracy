@@ -83,13 +83,19 @@ class ProxyHandler(BaseHTTPRequestHandler):
             budget.close()
             self.send_error(429, "hache local input budget exceeded")
             return
-        connection = http.client.HTTPSConnection(parsed.hostname, parsed.port or 443, timeout=120)
-        headers = {k: v for k, v in self.headers.items() if k.lower() not in {"host", "content-length"}}
-        upstream_path = parsed.path.rstrip("/") + self.path
-        if parsed.query:
-            upstream_path += "?" + parsed.query
-        connection.request("POST", upstream_path, body=body, headers=headers)
-        response = connection.getresponse()
+        try:
+            connection = http.client.HTTPSConnection(parsed.hostname, parsed.port or 443, timeout=120)
+            headers = {k: v for k, v in self.headers.items() if k.lower() not in {"host", "content-length"}}
+            upstream_path = parsed.path.rstrip("/") + self.path
+            if parsed.query:
+                upstream_path += "?" + parsed.query
+            connection.request("POST", upstream_path, body=body, headers=headers)
+            response = connection.getresponse()
+        except OSError:
+            budget.record(request_id, estimated, None, 502, (time.perf_counter() - started) * 1000)
+            budget.close()
+            self.send_error(502, "Hache upstream unavailable")
+            return
         self.send_response(response.status)
         for key, value in response.getheaders():
             if key.lower() not in {"transfer-encoding", "connection"}:

@@ -187,6 +187,9 @@ def test_proxy_extracts_sse_usage_without_mutating_payload():
     stream = b'data: {"type":"message_delta","usage":{"input_tokens":7,"cache_read_input_tokens":5}}\n'
     assert extract_usage(stream) == 12
 
+def test_proxy_rejects_invalid_usage_lines_without_crashing():
+    assert extract_usage(b'data: {"usage": broken}\n') is None
+
 def test_doctor_strict_rejects_invalid_settings(tmp_path):
     target = tmp_path / "bad.json"; target.write_text("not-json")
     result = report(target)
