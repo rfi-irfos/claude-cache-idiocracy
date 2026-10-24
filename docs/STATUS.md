@@ -9,6 +9,7 @@
 - `hache doctor --strict`, cross-platform packaging, RTK detection and hook wiring.
 - Hook-enforced per-session subagent admission and release accounting.
 - Deterministic local read/token-savings benchmark (`scripts/hache-token-benchmark.py`).
+- Local observability command for read ranges, agent occupancy and proxy usage metadata.
 - macOS/Linux/Windows CI with package, installer and regression coverage.
 
 ## Current limitations

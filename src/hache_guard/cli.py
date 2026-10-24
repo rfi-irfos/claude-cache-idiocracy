@@ -13,6 +13,7 @@ from .doctor import run as doctor_main
 from .indexer import SessionIndexer
 from .lifecycle import rollback, uninstall
 from .agent_guard import admit, release
+from .observability import report as observability_report
 
 
 def hook(event: str) -> int:
@@ -40,7 +41,7 @@ def hook(event: str) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["pre", "post", "policy", "install", "uninstall", "rollback", "analyze", "run", "compact", "doctor", "index"])
+    parser.add_argument("command", choices=["pre", "post", "policy", "install", "uninstall", "rollback", "analyze", "run", "compact", "doctor", "index", "stats"])
     parser.add_argument("path", nargs="?")
     parser.add_argument("--replace", action="store_true")
     parser.add_argument("--strict", action="store_true")
@@ -76,6 +77,9 @@ def main() -> int:
     if args.command == "index":
         if not args.path: parser.error("index requires a transcript path")
         print(json.dumps(SessionIndexer().index(args.path), indent=2))
+        return 0
+    if args.command == "stats":
+        print(json.dumps(observability_report(), indent=2, sort_keys=True))
         return 0
     print(json.dumps(Policy.from_env().__dict__, indent=2))
     return 0

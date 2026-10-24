@@ -64,3 +64,6 @@ See `docs/STATUS.md` for verified capabilities and explicit limitations.
 
 To remove only Hache-managed settings and hooks while preserving all other
 Claude configuration, run `hache-guard uninstall`.
+
+Local operational metrics are available without exposing prompt bodies:
+`hache-stats` or `python3 -m hache_guard stats`.

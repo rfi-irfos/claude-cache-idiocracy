@@ -14,6 +14,7 @@ setup(
             "hache-compact=hache_guard.cli:main",
             "hache-doctor=hache_guard.doctor:main",
             "hache-proxy=hache_guard.proxy:main",
+            "hache-stats=hache_guard.observability:main",
         ]
     },
 )

@@ -14,6 +14,7 @@ from hache_guard.doctor import report
 from hache_guard.lifecycle import rollback, uninstall
 from hache_guard.proxy import Budget, extract_usage
 from hache_guard.agent_guard import admit, release
+from hache_guard.observability import proxy_stats, report as observability_report
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -244,6 +245,19 @@ def test_agent_guard_isolated_by_session(tmp_path, monkeypatch):
     monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
     for _ in range(3): assert admit("a")[0]
     assert admit("b")[0]
+
+def test_observability_reports_read_and_agent_state(tmp_path, monkeypatch):
+    monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
+    target = tmp_path / "memory.md"; target.write_text("memory")
+    record(str(target), session="s")
+    admit("s")
+    result = observability_report()
+    assert result["read_paths"] == 1 and result["active_agents"] == 1
+    release("s")
+
+def test_proxy_stats_empty_state_is_safe(tmp_path):
+    result = proxy_stats(tmp_path / "missing.sqlite")
+    assert result["requests"] == 0 and result["blocked"] == 0
 
 def test_parallel_read_records_do_not_lose_state(tmp_path, monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
