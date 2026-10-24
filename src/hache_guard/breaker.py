@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .policy import Policy
 
 def evaluate(metrics: dict, policy: Policy | None = None) -> dict:
