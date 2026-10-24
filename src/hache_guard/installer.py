@@ -2,6 +2,7 @@ from __future__ import annotations
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -31,6 +32,15 @@ def install_settings(settings: str | Path | None = None) -> Path:
         bucket.append({"matcher": "Read", "hooks": [{"type": "command", "command": command_text}]})
     add("PreToolUse", "pre")
     add("PostToolUse", "post")
+    # RTK owns Bash-output rewriting; only wire it when already installed.
+    # The guard itself remains functional when RTK is absent.
+    if shutil.which("rtk"):
+        bucket = hooks.setdefault("PreToolUse", [])
+        if not any(
+            any(h.get("command") == "rtk hook claude" for h in item.get("hooks", []) if isinstance(h, dict))
+            for item in bucket
+        ):
+            bucket.append({"matcher": "Bash", "hooks": [{"type": "command", "command": "rtk hook claude"}]})
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return target

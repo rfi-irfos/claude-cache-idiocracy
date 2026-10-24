@@ -132,5 +132,11 @@ def test_installer_is_idempotent_and_sets_model(tmp_path):
     install_settings(target); install_settings(target)
     data = json.loads(target.read_text())
     assert data["model"] == "claude-sonnet-5"
-    assert len(data["hooks"]["PreToolUse"]) == 1
-    assert len(data["hooks"]["PostToolUse"]) == 1
+    assert sum(item["matcher"] == "Read" for item in data["hooks"]["PreToolUse"]) == 1
+    assert sum(item["matcher"] == "Read" for item in data["hooks"]["PostToolUse"]) == 1
+
+def test_installer_wires_existing_rtk_without_requiring_it(tmp_path, monkeypatch):
+    monkeypatch.setattr("hache_guard.installer.shutil.which", lambda name: "/usr/bin/rtk" if name == "rtk" else None)
+    target = tmp_path / "settings.json"; install_settings(target)
+    data = json.loads(target.read_text())
+    assert any(h["command"] == "rtk hook claude" for item in data["hooks"]["PreToolUse"] for h in item["hooks"])
