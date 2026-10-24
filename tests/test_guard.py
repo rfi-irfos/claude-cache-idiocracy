@@ -12,7 +12,7 @@ from hache_guard.installer import install_settings
 from hache_guard.indexer import SessionIndexer
 from hache_guard.doctor import report
 from hache_guard.lifecycle import rollback, uninstall
-from hache_guard.proxy import Budget
+from hache_guard.proxy import Budget, extract_usage
 from hache_guard.agent_guard import admit, release
 
 
@@ -182,6 +182,10 @@ def test_proxy_records_usage_metadata_without_prompt(tmp_path, monkeypatch):
     budget = Budget(); assert budget.charge(20); budget.record("req", 20, 12, 200, 4.5); budget.close()
     raw = (tmp_path / "proxy.sqlite").read_bytes()
     assert b"req" in raw and b"prompt" not in raw
+
+def test_proxy_extracts_sse_usage_without_mutating_payload():
+    stream = b'data: {"type":"message_delta","usage":{"input_tokens":7,"cache_read_input_tokens":5}}\n'
+    assert extract_usage(stream) == 12
 
 def test_doctor_strict_rejects_invalid_settings(tmp_path):
     target = tmp_path / "bad.json"; target.write_text("not-json")

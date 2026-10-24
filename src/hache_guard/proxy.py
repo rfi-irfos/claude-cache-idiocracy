@@ -12,6 +12,22 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
 
+def extract_usage(buffer: bytes, current: int | None = None) -> int | None:
+    """Read provider SSE metadata without retaining the response body."""
+    for line in buffer.splitlines():
+        if b"data:" not in line or b"usage" not in line:
+            continue
+        try:
+            event = json.loads(line.split(b"data:", 1)[1].strip())
+            usage = event.get("usage") or {}
+            candidate = int(usage.get("input_tokens", 0) or 0) + int(usage.get("cache_read_input_tokens", 0) or 0)
+            if candidate:
+                current = candidate
+        except (ValueError, TypeError, json.JSONDecodeError):
+            continue
+    return current
+
+
 class Budget:
     def __init__(self):
         path = os.environ.get("HACHE_PROXY_STATE", "~/.claude/hache-proxy.sqlite3").replace("~", os.path.expanduser("~"))
@@ -89,15 +105,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             line_buffer += chunk
             while b"\n" in line_buffer:
                 line, line_buffer = line_buffer.split(b"\n", 1)
-                if b"data:" in line and b"usage" in line:
-                    try:
-                        event = json.loads(line.split(b"data:", 1)[1].strip())
-                        usage = event.get("usage") or {}
-                        candidate = int(usage.get("input_tokens", 0) or 0) + int(usage.get("cache_read_input_tokens", 0) or 0)
-                        if candidate:
-                            actual = candidate
-                    except (ValueError, TypeError, json.JSONDecodeError):
-                        pass
+                actual = extract_usage(line, actual)
             self.wfile.write(chunk)
             self.wfile.flush()
         budget.record(request_id, estimated, actual, response.status, (time.perf_counter() - started) * 1000)
