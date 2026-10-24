@@ -14,3 +14,16 @@ jobs:
       - run: python -m pip install --upgrade pip pytest
       - run: python -m pip install .
       - run: python -m pytest -q
+      - name: exercise installer (Unix)
+        if: runner.os != 'Windows'
+        env:
+          HACHE_REPO: ${{ github.workspace }}
+          HACHE_DIR: ${{ runner.temp }}/hache-install
+        run: sh install.sh
+      - name: exercise installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          HACHE_REPO: ${{ github.workspace }}
+          HACHE_DIR: ${{ runner.temp }}\hache-install
+        run: ./install.ps1
