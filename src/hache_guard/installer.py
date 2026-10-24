@@ -23,19 +23,22 @@ def install_settings(settings: str | Path | None = None) -> Path:
     executable = subprocess.list2cmdline([sys.executable]) if os.name == "nt" else shlex.quote(sys.executable)
     command = f"{executable} -m hache_guard"
     hooks = data.setdefault("hooks", {})
-    def add(event, suffix):
+    def add(event, suffix, matcher="Read"):
         bucket = hooks.setdefault(event, [])
         command_text = f"{command} {suffix}"
         if any(
+            item.get("matcher") == matcher and
             hook.get("command") == command_text
             for item in bucket
             for hook in item.get("hooks", [])
             if isinstance(hook, dict)
         ):
             return
-        bucket.append({"matcher": "Read", "hooks": [{"type": "command", "command": command_text}]})
+        bucket.append({"matcher": matcher, "hooks": [{"type": "command", "command": command_text}]})
     add("PreToolUse", "pre")
     add("PostToolUse", "post")
+    add("PreToolUse", "pre", "Task|Agent")
+    add("PostToolUse", "post", "Task|Agent")
     # RTK owns Bash-output rewriting; only wire it when already installed.
     # The guard itself remains functional when RTK is absent.
     if shutil.which("rtk"):

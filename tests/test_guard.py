@@ -13,6 +13,7 @@ from hache_guard.indexer import SessionIndexer
 from hache_guard.doctor import report
 from hache_guard.lifecycle import rollback, uninstall
 from hache_guard.proxy import Budget
+from hache_guard.agent_guard import admit, release
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -218,3 +219,15 @@ def test_policy_env_override_for_concurrency(monkeypatch):
 
 def test_breaker_error_threshold_is_hard():
     assert evaluate({"errors":{"502":50}})["state"] == "break"
+
+def test_agent_guard_enforces_three_and_releases(tmp_path, monkeypatch):
+    monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
+    assert admit("s")[0] and admit("s")[0] and admit("s")[0]
+    assert not admit("s")[0]
+    release("s")
+    assert admit("s")[0]
+
+def test_agent_guard_isolated_by_session(tmp_path, monkeypatch):
+    monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
+    for _ in range(3): assert admit("a")[0]
+    assert admit("b")[0]

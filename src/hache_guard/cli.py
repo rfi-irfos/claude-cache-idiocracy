@@ -12,6 +12,7 @@ from .offline_compact import compact
 from .doctor import run as doctor_main
 from .indexer import SessionIndexer
 from .lifecycle import rollback, uninstall
+from .agent_guard import admit, release
 
 
 def hook(event: str) -> int:
@@ -21,12 +22,19 @@ def hook(event: str) -> int:
         return 0
     tool = payload.get("tool_name", "")
     inp = payload.get("tool_input") or {}
+    session = payload.get("session_id", "")
     if event == "pre" and tool == "Read" and inp.get("file_path"):
         decision = check(inp["file_path"], int(inp.get("offset") or 0), inp.get("limit"), payload.get("session_id", ""))
         if not decision.allowed:
             print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": decision.reason}}))
+    elif event == "pre" and tool in ("Task", "Agent"):
+        allowed, reason = admit(session)
+        if not allowed:
+            print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": reason}}))
     elif event == "post" and tool == "Read" and inp.get("file_path"):
         record(inp["file_path"], int(inp.get("offset") or 0), inp.get("limit"), payload.get("session_id", ""))
+    elif event == "post" and tool in ("Task", "Agent"):
+        release(session)
     return 0
 
 
