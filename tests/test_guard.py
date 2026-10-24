@@ -92,7 +92,7 @@ def test_metrics_counts_one_error_per_request_and_uses_window(tmp_path):
     target = tmp_path / "errors.jsonl"
     rows = [
         {"type":"api-request", "id":"old", "timestamp":"2020-01-01T00:00:00Z", "error":"502 timeout"},
-        {"type":"api-request", "id":"new", "timestamp":"2020-01-01T00:10:00Z", "error":"502 timeout"},
+        {"type":"api-request", "id":"new", "timestamp":"2020-01-01T00:20:00Z", "error":"502 timeout"},
     ]
     target.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
     assert transcript_usage(target)["errors"] == {"502": 1}
