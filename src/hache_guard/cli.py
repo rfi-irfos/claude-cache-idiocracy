@@ -31,7 +31,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=["pre", "post", "policy", "install", "analyze", "run", "compact"])
     parser.add_argument("path", nargs="?")
-    args = parser.parse_args()
+    parser.add_argument("--replace", action="store_true")
+    # Allow the ergonomic `compact --replace transcript.jsonl` ordering.
+    args = parser.parse_intermixed_args()
     if args.command in ("pre", "post"):
         return hook(args.command)
     if args.command == "install":
@@ -46,7 +48,7 @@ def main() -> int:
         return supervise(args.path and [args.path] or ["claude"])
     if args.command == "compact":
         if not args.path: parser.error("compact requires a transcript path")
-        print(compact(args.path))
+        print(compact(args.path, replace=args.replace))
         return 0
     print(json.dumps(Policy.from_env().__dict__, indent=2))
     return 0

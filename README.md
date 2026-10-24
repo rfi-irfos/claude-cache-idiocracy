@@ -47,5 +47,7 @@ hache-compact compact ~/.claude/projects/<project>/<session>.jsonl
 ```
 
 This writes a deterministic local handover and leaves the original transcript untouched.
+Add `--replace` to archive the original as `.full-<timestamp>.jsonl` and leave a
+single synthetic compact-summary entry at the original session path for `--resume`.
 
 See `docs/upstream.md` for the open-source inspirations and attribution.

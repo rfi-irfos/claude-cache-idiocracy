@@ -6,6 +6,8 @@ from hache_guard.read_guard import check, record
 from hache_guard.breaker import evaluate
 from hache_guard.metrics import transcript_usage
 from hache_guard.supervisor import find_transcript
+from hache_guard.offline_compact import compact
+from hache_guard.handover import write
 
 
 def test_policy_is_ten_tools_three_agents():
@@ -47,3 +49,40 @@ def test_changed_file_is_allowed(tmp_path, monkeypatch):
     record(str(target))
     target.write_text("two\n", encoding="utf-8")
     assert check(str(target)).allowed
+
+def test_range_overlap_is_blocked(tmp_path, monkeypatch):
+    target = tmp_path / "x.txt"; target.write_text("0123456789")
+    monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
+    record(str(target), 2, 4)
+    assert not check(str(target), 3, 2).allowed
+
+def test_range_outside_is_allowed(tmp_path, monkeypatch):
+    target = tmp_path / "x.txt"; target.write_text("0123456789")
+    monkeypatch.setenv("HACHE_STATE", str(tmp_path / "state.json"))
+    record(str(target), 2, 2)
+    assert check(str(target), 8, 2).allowed
+
+def test_metrics_parse_assistant_usage(tmp_path):
+    target = tmp_path / "s.jsonl"
+    row = {"type":"assistant", "message":{"usage":{"input_tokens":4,"output_tokens":2,"cache_read_input_tokens":9}}}
+    target.write_text(json.dumps(row) + "\n")
+    metrics = transcript_usage(target)
+    assert metrics["input_tokens"] == 4 and metrics["cache_read_input_tokens"] == 9
+
+def test_offline_replace_archives_and_leaves_summary(tmp_path):
+    target = tmp_path / "session.jsonl"
+    original = json.dumps({"type":"user","message":{"role":"user","content":"hello"}}) + "\n"
+    target.write_text(original)
+    compact(target, replace=True)
+    archives = list(tmp_path.glob("session.full-*.jsonl"))
+    current = json.loads(target.read_text().splitlines()[0])
+    assert current["isCompactSummary"] and len(archives) == 1 and archives[0].read_text() == original
+
+def test_handover_names_are_unique(tmp_path, monkeypatch):
+    assert write("a", {}, str(tmp_path)) != write("a", {}, str(tmp_path))
+
+def test_find_transcript_returns_existing_file(tmp_path):
+    p = tmp_path / "abc.jsonl"; p.write_text("{}\n")
+    import os, time
+    os.environ["CLAUDE_PROJECTS"] = str(tmp_path)
+    assert find_transcript(str(tmp_path), time.time() - 10) == p
