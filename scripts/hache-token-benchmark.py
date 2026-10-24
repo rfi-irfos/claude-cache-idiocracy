@@ -25,6 +25,8 @@ def main() -> int:
         elapsed = time.perf_counter() - start
         total_bytes = len(payload) * 100
         avoided = total_bytes - len(payload) * allowed
+        if allowed != 1 or avoided <= 0:
+            raise SystemExit("read guard did not demonstrate duplicate-read suppression")
         print(json.dumps({"attempted_reads": 100, "allowed_reads": allowed, "blocked_reads": 100 - allowed, "estimated_bytes_avoided": avoided, "elapsed_seconds": elapsed}, indent=2))
     return 0
 
