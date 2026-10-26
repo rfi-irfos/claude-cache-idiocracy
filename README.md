@@ -1,5 +1,11 @@
 # Claude Cache Idiocracy
 
+[![test](https://github.com/rfi-irfos/claude-cache-idiocracy/actions/workflows/test.yml/badge.svg)](https://github.com/rfi-irfos/claude-cache-idiocracy/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-555)](.github/workflows/test.yml)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-hooks-D97757?logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code/hooks)
+
 Open-source RFI-IRFOS enforcement layer for Claude Code. It combines persistent,
 session-scoped read deduplication, incremental transcript indexing, offline
 compaction, retry/cost circuit breaking, RTK integration and bounded subagent fan-out.
