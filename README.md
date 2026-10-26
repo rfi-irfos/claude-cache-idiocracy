@@ -1,6 +1,6 @@
 # Claude Cache Idiocracy
 
-Private RFI-IRFOS enforcement layer for Claude Code. It combines persistent,
+Open-source RFI-IRFOS enforcement layer for Claude Code. It combines persistent,
 session-scoped read deduplication, incremental transcript indexing, offline
 compaction, retry/cost circuit breaking, RTK integration and bounded subagent fan-out.
 
@@ -21,20 +21,20 @@ local summary excerpts so a replaced session can resume with context.
 
 ## Install
 
-Requires an authenticated `gh` CLI because the repository is private.
+Requires `git` and Python 3.9+.
 
 The installer is the only setup step: it updates the checkout, installs the
 package, migrates settings, wires hooks, detects RTK, runs the strict doctor,
 and fails if any required check is unsuccessful.
 
 ```sh
-H="$HOME/.claude/claude-cache-idiocracy"; if [ -d "$H/.git" ]; then git -C "$H" pull --ff-only; else gh repo clone rfi-irfos/claude-cache-idiocracy "$H"; fi && sh "$H/install.sh" --all
+H="$HOME/.claude/claude-cache-idiocracy"; if [ -d "$H/.git" ]; then git -C "$H" pull --ff-only; else git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$H"; fi && sh "$H/install.sh" --all
 ```
 
 Windows PowerShell:
 
 ```powershell
-if (!(Test-Path "$HOME/.claude/claude-cache-idiocracy/.git")) { gh repo clone rfi-irfos/claude-cache-idiocracy "$HOME/.claude/claude-cache-idiocracy" } else { git -C "$HOME/.claude/claude-cache-idiocracy" pull --ff-only }; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1" -All
+if (!(Test-Path "$HOME/.claude/claude-cache-idiocracy/.git")) { git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$HOME/.claude/claude-cache-idiocracy" } else { git -C "$HOME/.claude/claude-cache-idiocracy" pull --ff-only }; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1" -All
 ```
 
 For a local checkout: `python3 -m pip install --user . && python3 -m hache_guard install`.
@@ -67,3 +67,7 @@ Claude configuration, run `hache-guard uninstall`.
 
 Local operational metrics are available without exposing prompt bodies:
 `hache-stats` or `python3 -m hache_guard stats`.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Built by Laura Serna Gaviria at RFI-IRFOS.

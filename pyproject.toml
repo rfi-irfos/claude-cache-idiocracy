@@ -7,6 +7,8 @@ name = "claude-cache-idiocracy"
 version = "0.2.0"
 description = "Local Claude Code context, read, retry and subagent guard"
 requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Laura Serna Gaviria"}]
 
 [project.scripts]
 hache-guard = "hache_guard.cli:main"
