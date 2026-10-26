@@ -6,74 +6,92 @@
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-555)](.github/workflows/test.yml)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-hooks-D97757?logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code/hooks)
 
-Open-source RFI-IRFOS enforcement layer for Claude Code. It combines persistent,
-session-scoped read deduplication, incremental transcript indexing, offline
-compaction, retry/cost circuit breaking, RTK integration and bounded subagent fan-out.
+**Keeps Claude Code from burning tokens on things it already did.** 🧠💸
 
-The guard stores hashes and counters locally. It never stores credentials or
-complete transcripts. Offline compaction deliberately retains only bounded,
-local summary excerpts so a replaced session can resume with context.
+Long Claude Code sessions get expensive in silly ways: the same file gets read
+again and again, a retry loop keeps hammering a failing API, subagents spawn
+subagents, and a giant transcript has to be sent back just to compact it.
+Claude Cache Idiocracy is a small local guard that says "nope" to all of that.
 
-## Defaults
+## What it does
 
-- 10 concurrent tool calls
-- 3 concurrent subagents
-- no nested subagents
-- hook-enforced per-session agent admission limit
-- 1-hour prompt-cache TTL for main and subagent conversations (supported Claude Code versions)
-- 100M cache-read soft warning
-- 250M cache-read hard breaker
-- 20 API-error soft warning / 50 hard breaker in a 15-minute window
+- 📖 **Reads each file once.** If a file is unchanged and that part was already
+  read in this session, the repeat read is skipped. Edit the file and it reads again.
+- 🔌 **Stops runaway sessions.** Too many API errors or a huge cache-read bill?
+  You get one soft warning, then a clean stop with a handover note.
+- 🤖 **Keeps subagents in check.** At most 3 at a time, and no subagents inside subagents.
+- 🗜️ **Compacts offline.** Big transcripts are summarised locally, nothing goes
+  back to the API. The full original is archived, never deleted.
+- 📊 **Shows you the numbers.** `hache-stats` prints reads, agents and usage, without prompt text.
 
-## Install
+Everything runs on your machine. The guard stores hashes and counters only,
+never credentials and never full transcripts.
 
-Requires `git` and Python 3.9+.
+## Quick start
 
-The installer is the only setup step: it updates the checkout, installs the
-package, migrates settings, wires hooks, detects RTK, runs the strict doctor,
-and fails if any required check is unsuccessful.
+You need `git` and Python 3.9+. One line installs everything, wires the hooks
+and runs a self-check:
 
 ```sh
 H="$HOME/.claude/claude-cache-idiocracy"; if [ -d "$H/.git" ]; then git -C "$H" pull --ff-only; else git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$H"; fi && sh "$H/install.sh" --all
 ```
 
-Windows PowerShell:
+<details>
+<summary>Windows (PowerShell)</summary>
 
 ```powershell
 if (!(Test-Path "$HOME/.claude/claude-cache-idiocracy/.git")) { git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$HOME/.claude/claude-cache-idiocracy" } else { git -C "$HOME/.claude/claude-cache-idiocracy" pull --ff-only }; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1" -All
 ```
 
-For a local checkout: `python3 -m pip install --user . && python3 -m hache_guard install`.
+</details>
 
-For full retry/compaction supervision, launch Claude through:
+Already have a checkout? `python3 -m pip install --user . && python3 -m hache_guard install`
+
+Then restart Claude Code. That's it. 🎉
+
+## Using it
+
+**Run Claude with the full safety net** (soft warning, then a clean stop with a handover):
 
 ```sh
 hache-claude -- claude
 ```
 
-The supervisor is local-only. It watches the Claude transcript, emits one soft
-warning, then writes a handover and terminates the process at the hard threshold.
-
-To compact a large existing transcript without sending it back to the API:
+**Shrink a huge transcript locally** so you can keep going with `--resume`:
 
 ```sh
 hache-compact compact ~/.claude/projects/<project>/<session>.jsonl
 ```
 
-This writes a deterministic local handover without sending transcript data to an API.
-Add `--replace` to archive the original as `.full-<timestamp>.jsonl` and leave a
-single synthetic compact-summary entry at the original session path for `--resume`.
-The archive is never deleted; only the resume-visible path is replaced.
+Add `--replace` to swap in the compact version. The full original stays next to
+it as `.full-<timestamp>.jsonl`.
 
-See `docs/upstream.md` for the open-source inspirations and attribution.
-See `docs/STATUS.md` for verified capabilities and explicit limitations.
+**See what it saved you:** `hache-stats`
 
-To remove only Hache-managed settings and hooks while preserving all other
-Claude configuration, run `hache-guard uninstall`.
+**Check the setup:** `hache-doctor`
 
-Local operational metrics are available without exposing prompt bodies:
-`hache-stats` or `python3 -m hache_guard stats`.
+**Remove it again:** `hache-guard uninstall` removes only its own settings and
+hooks and leaves the rest of your Claude config alone.
+
+## Default limits
+
+| Guard | Default |
+|---|---|
+| Parallel tool calls | 10 |
+| Parallel subagents | 3, none nested |
+| Prompt-cache TTL | 1 hour, main and subagents (on Claude Code versions that support it) |
+| Cache reads | warning at 100M, stop at 250M |
+| API errors (15 min window) | warning at 20, stop at 50 |
+
+## Good to know
+
+- [`docs/STATUS.md`](docs/STATUS.md) lists what is verified and the current limits.
+- [`docs/upstream.md`](docs/upstream.md) credits the open-source projects that inspired it,
+  including [RTK](https://github.com/rtk-ai/rtk), which is used when you have it installed.
+- Tests run on Linux, macOS and Windows on every push.
+
+Issues and pull requests are welcome! 💛
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Built by Laura Serna Gaviria at RFI-IRFOS.
+MIT, see [LICENSE](LICENSE). Built with care by Laura Serna Gaviria at RFI-IRFOS.
