@@ -8,6 +8,29 @@
 
 **Keeps Claude Code from burning tokens on things it already did.** 🧠💸
 
+## Install in one line
+
+Needs `git` and Python 3.9+. Installs everything, wires the hooks and runs a self-check:
+
+```sh
+H="$HOME/.claude/claude-cache-idiocracy"; if [ -d "$H/.git" ]; then git -C "$H" pull --ff-only; else git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$H"; fi && sh "$H/install.sh" --all
+```
+
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+if (!(Test-Path "$HOME/.claude/claude-cache-idiocracy/.git")) { git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$HOME/.claude/claude-cache-idiocracy" } else { git -C "$HOME/.claude/claude-cache-idiocracy" pull --ff-only }; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1" -All
+```
+
+</details>
+
+Already have a checkout? `python3 -m pip install --user . && python3 -m hache_guard install`
+
+Then restart Claude Code. That's it. 🎉
+
+## Why
+
 Long Claude Code sessions get expensive in silly ways: the same file gets read
 again and again, a retry loop keeps hammering a failing API, subagents spawn
 subagents, and a giant transcript has to be sent back just to compact it.
@@ -26,28 +49,6 @@ Claude Cache Idiocracy is a small local guard that says "nope" to all of that.
 
 Everything runs on your machine. The guard stores hashes and counters only,
 never credentials and never full transcripts.
-
-## Quick start
-
-You need `git` and Python 3.9+. One line installs everything, wires the hooks
-and runs a self-check:
-
-```sh
-H="$HOME/.claude/claude-cache-idiocracy"; if [ -d "$H/.git" ]; then git -C "$H" pull --ff-only; else git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$H"; fi && sh "$H/install.sh" --all
-```
-
-<details>
-<summary>Windows (PowerShell)</summary>
-
-```powershell
-if (!(Test-Path "$HOME/.claude/claude-cache-idiocracy/.git")) { git clone https://github.com/rfi-irfos/claude-cache-idiocracy.git "$HOME/.claude/claude-cache-idiocracy" } else { git -C "$HOME/.claude/claude-cache-idiocracy" pull --ff-only }; powershell -ExecutionPolicy Bypass -File "$HOME/.claude/claude-cache-idiocracy/install.ps1" -All
-```
-
-</details>
-
-Already have a checkout? `python3 -m pip install --user . && python3 -m hache_guard install`
-
-Then restart Claude Code. That's it. 🎉
 
 ## Using it
 
